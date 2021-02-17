@@ -9,8 +9,8 @@ provisioner:
   name: chef_zero
   deprecations_as_errors: true
   chef_license: accept-no-persist
-  product_name: chef
-  product_version: <%= ENV['CHEF_VERSION'] || 'latest' %>
+  product_name: cinc
+  product_version: <%= ENV['KITCHEN_CINC_VERSION'] %>
   install_strategy: once
   retry_on_exit_code:
     - 0
@@ -31,24 +31,40 @@ transport:
   winrm_transport: plaintext  # When set to plaintext the winrm will run in one converge
 
 platforms:
-  - name: windows-2012-r2
+  - name: ec2-windows-2019
     driver:
-      box: tas50/windows_2012r2
-      customize:
-        memory: 2048
-  - name: windows-2016
-    driver:
-      box: tas50/windows_2016
-      customize:
-        memory: 2048
+      image_search:
+        owner-id: 801119661308 # amazon
+        name: Windows_Server-2019-English-Full-Base*
+      aws_ssh_key_id: <%= ENV['AWS_SSH_KEY_ID'] %>
+      region: us-west-2
+      availability_zone: a
+      subnet_id: subnet-adf478c8
+      instance_type: t2.micro
+      security_group_ids: [ 'sg-92f872f6' ]
+      associate_public_ip: false
+      tags:
+        chef-recipe: windows_ad
+        created-by: test-kitchen
+    transport:
+      name: winrm
+      username: Administrator
+      ssh_key: <%= ENV['AWS_SSH_KEY_PATH'] %>
+      elevated: true
+
   - name: windows-2019
     driver:
-      box: tas50/windows_2019
+      box: sev1tech/windows-2019
       customize:
-        memory: 2048
+        memory: 4096
+  - name: windows-2016
+    driver:
+      box: espus/windows-2016
+      customize:
+        memory: 4096
 
 suites:
-  - name: default
+  - name: activedir
     run_list:
       - recipe[windows_ad::default]
     verifier:
